@@ -1,264 +1,232 @@
-# Day 2 — Files & Directories
+# Day 3 — Reading & Editing Files
 
-Today we'll learn how to create, copy, move, rename, delete, and find files.
+Today we'll learn how to read, create, edit, search, and inspect text files from Bash.
 
-By the end, you'll be able to manage a project directory entirely from Bash.
+This is especially important because, later, you'll spend a lot of time working with logs, configuration files, .env files, JSON, YAML, and application output.
+
+## Today's roadmap
 
 ## Remember these commands
 
-| Command    | Purpose                   |
-| ---------- | ------------------------- |
-| `mkdir`    | Create directory          |
-| `mkdir -p` | Create nested directories |
-| `cp`       | Copy                      |
-| `cp -r`    | Copy directory            |
-| `mv`       | Move                      |
-| `mv`       | Rename                    |
-| `rmdir`    | Remove empty directory    |
-| `rm`       | Remove file               |
-| `rm -r`    | Remove directory          |
-| `find`     | Find files/directories    |
-| `*`        | Any number of characters  |
-| `?`        | One character             |
-
-### mkdir — Create directories
-
-Create three directories:
-
-```bash
-mkdir projects backups logs
+```text
+cat
+ ↓
+less
+ ↓
+head / tail
+ ↓
+nano
+ ↓
+echo
+ ↓
+>
+>>
+ ↓
+file contents
 ```
 
-Create nested directories, You can create multiple levels with -p:
+## > — Write to a file
 
 ```bash
-mkdir -p projects/backend/src
+echo "Hello Bash" > notes.txt
 ```
 
-NB. The -p option creates parent directories when necessary.
+means: Write/redirect output into a file. If the file doesn't exist, Bash creates it. If it already exists, its previous contents are replaced.
 
-### cp — Copy files
+NB. Remember this. > can overwrite files.
 
-Syntax:
+## >> — Append to a file
+
+```bash
+echo "First line" > notes.txt
+echo "Second line" >> notes.txt
+echo "Third line" >> notes.txt
+
+cat notes.txt
+```
+
+The difference is:
 
 ```text
-cp SOURCE DESTINATION
+> → overwrite
+>> → append
 ```
 
-Example:
+This is one of the most useful concepts in Bash.
+
+## cat — Read a file
+
+It displays the entire file.
 
 ```bash
-# Create a file
-touch notes.txt
-
-# Copy it
-cp notes.txt notes-backup.txt
+cat notes.txt
 ```
 
-### Copy a file into a directory
-
-Let's copy notes.txt into backups directory:
+You can also combine multiple files:
 
 ```bash
-cp notes.txt backups/
+cat file1.txt file2.txt
 ```
 
-### Copy an entire directory
+## less — Read large files
+
+This lets you read the file page by page.
 
 ```bash
-cp -r projects projects-copy
+less application.log
 ```
 
-NB. The -r means recursive. It's required when copying directories and their contents.
-
-### mv — Move files
-
-```bash
-mv commands-new.txt backups/
-```
-
-### mv is also used for renaming
-
-Syntax:
+Useful keys inside less:
 
 ```text
-mv old-name new-name
+Space      → next page
+b          → previous page
+↑ / ↓      → move
+/word      → search
+q          → quit
 ```
 
-Example:
+## head — First lines
 
 ```bash
-mv notes-backup.txt notes-old.txt
+head numbers.txt
 ```
 
-### Can move and rename a file at the same time using mv
+By default, head shows the first 10 lines.
+
+Specify number of lines (show the first 5 lines)
 
 ```bash
-mv old-file.txt /path/to/directory/new-file.txt
+head -n 5 numbers.txt
 ```
 
-### Rename a directory
+## tail — Last lines
 
 ```bash
-mv projects-copy old-projects
+tail numbers.txt
 ```
 
-### Delete an empty directory
+It shows the last 10 lines.
+
+Specify number of lines (show the last 5 lines)
 
 ```bash
-rmdir test-folder
-```
-
-NB. **rmdir** works only for empty directories.
-
-### rm -r — Delete a directory with files
-
-```bash
-rm -r old-projects
-```
-
-Never casually run commands like:
-
-```bash
-rm -rf /
-```
-
-or,
-
-```bash
-rm -rf *
-```
-
-until you fully understand what they target.
-
-### Wildcards
-
-#### \* means "anything"
-
-```bash
-ls *.log
-```
-
-means: List all files in the current directory whose names end with .log
-
-```bash
-ls log*
-```
-
-means: List all files/directories whose names start with log.
-
-#### ? represents one character
-
-```bash
-ls ca?.txt
-```
-
-means: Find .txt files whose name starts with ca, followed by exactly one character.
-
-### find — Find files
-
-Find all .txt files:
-
-```bash
-find . -name "*.txt"
-```
-
-This searches for files exactly named: **notes.txt**
-
-```base
-find . -name "notes.txt"
-```
-
-Explain:
-
-find = The command
-
-. = Start searching from the current directory
-
--name = Search based on filename
-
-"\*.txt" = Filename pattern
-
-#### Find directories
-
-You can tell find that you only want directories:
-
-```bash
-find . -type d
-```
-
-#### Find file
-
-You can tell find that you only want files:
-
-```bash
-find . -type f
-```
-
-A real-world example
-
-```bash
-find /var/www/app -type f -name "*.log"
+tail -n 5 numbers.txt
 ```
 
 ## Homework
 
-Now let's make this more realistic.
+Let's make this more practical.
 
-From:
+Go to:
+
+```text
+cd ~/bash-course/day3
+```
+
+Challenge 1 — Create a configuration file
+
+Create:
+
+```text
+config.txt
+```
+
+with Nano.
+
+Put:
+
+```text
+APP_NAME=MyBashApp
+APP_ENV=development
+APP_PORT=3000
+DATABASE=postgres
+```
+
+Then save it.
+
+Verify:
+
+```text
+cat config.txt
+Challenge 2 — Create a log
+```
+
+Create **server.log** using **echo** and **>>**.
+
+It should contain:
+
+```text
+Server starting
+Database connecting
+Database connected
+Server listening
+Request received
+Request completed
+```
+
+Then verify with:
 
 ```bash
-cd ~/bash-course
+cat server.log
 ```
 
-Create this structure:
+Challenge 3 — Inspect the log
+
+Run:
+
+```bash
+head -n 3 server.log
+```
+
+Then:
+
+```bash
+tail -n 3 server.log
+```
+
+Observe the difference.
+
+Challenge 4 — Count
+
+Run:
+
+```bash
+wc -l server.log
+```
+
+You should get:
 
 ```text
-bash-course/
-└── day2/
-    ├── projects/
-    │   ├── backend/
-    │   └── frontend/
-    ├── backups/
-    └── logs/
+6 server.log
 ```
 
-Then create these files:
+Challenge 5 — Live log monitoring
+
+Run:
+
+```bash
+tail -f server.log
+```
+
+Keep it running.
+
+Open another terminal and execute:
+
+```bash
+cd ~/bash-course/day3
+echo "New request received" >> server.log
+echo "Request completed" >> server.log
+```
+
+Watch the first terminal.
+
+Then press:
 
 ```text
-day2/
-├── projects/
-│   ├── backend/
-│   │   └── app.js
-│   └── frontend/
-│       └── app.js
-├── backups/
-│   └── backup.txt
-└── logs/
-    ├── app.log
-    └── error.log
+Ctrl + C
 ```
 
-**Then perform these operations:**
+to stop **tail -f**.
 
-1. Copy app.js from backend to backups.
-
-2. Rename the copied file to:
-
-```text
-backend-app.js
-```
-
-3. Move error.log into backups.
-
-4. Find all .log files under day2.
-
-5. Find all .js files under day2.
-
-6. Create a copy of the entire backend directory called:
-
-```text
-backend-backup
-```
-
-Thank you.
+Thank you
