@@ -1,4 +1,0 @@
-APP_NAME=MyBashApp
-APP_ENV=development
-APP_PORT=3000
-DATABASE=postgres
