@@ -1,636 +1,704 @@
-# Day 4 — Linux Permissions
+# Day 5 — Processes & System Basics
 
-Today we're going to understand one of the most important Linux concepts for DevOps:
+Today we'll learn how Linux manages running programs, processes, CPU, memory, disk space, and jobs.
 
-```text
--rwxr-xr--
-```
-
-## Understanding -rw-r--r--
-
-Look at:
+This is an important day for your DevOps goal because when a server is having problems, you'll often need to answer questions like:
 
 ```text
--rw-r--r--
+What is running?
+What is using CPU?
+What is using memory?
+Is my application running?
+Which process is causing the problem?
+How much disk space is left?
 ```
 
-There are 10 characters:
+## Today's roadmap
 
 ```text
-- r w - r - - r - -
+Process
+   ↓
+ps
+   ↓
+top
+   ↓
+kill
+   ↓
+jobs
+   ↓
+bg / fg
+   ↓
+df
+   ↓
+du
+   ↓
+free
 ```
 
-Think of them as:
+## What is a process?
 
-```text
-[TYPE][OWNER][GROUP][OTHERS]
-```
-
-More specifically:
-
-```text
-- | rw- | r-- | r--
-  |     |     |
-  |     |     └── Others
-  |     └──────── Group
-  └────────────── Owner
-```
-
-The first character tells us the file type.
-
-```text
-- → regular file
-  d → directory
-  l → symbolic link
-```
-
-## Read, Write, Execute
-
-Each group represents:
-
-```text
-r = read
-w = write
-x = execute
-```
-
-So:
-
-rw-
-
-means:
-
-```text
-read    ✓
-write   ✓
-execute ✗
-```
-
-And:
-
-r--
-
-means:
-
-```text
-read    ✓
-write   ✗
-execute ✗
-```
-
-## Three permission categories
-
-Linux has three main permission categories:
-
-Owner
-Group
-Others
-
-For example:
-
-```text
--rwxr-xr--
-```
-
-means:
-
-```text
-       Owner  Group  Others
-         ↓      ↓      ↓
-       rwx    r-x     r--
-```
-
-Therefore:
-
-### Owner
-
-```text
-rwx
-```
-
-Can:
-
-```text
-read
-write
-execute
-```
-
-### Group
-
-```text
-r-x
-```
-
-Can:
-
-```text
-read
-execute
-```
-
-but cannot write.
-
-### Others
-
-```text
-r--
-```
-
-Can only read.
-
-## Who am I?
-
-Which user am I currently logged in as?
+When you start a program:
 
 ```bash
-whoami
+node server.js
 ```
 
-## id
+Linux creates a process.
+
+PID means: Process ID
+
+You can think of it as the unique ID of a running program.
+
+## ps — See running processes
 
 ```bash
-id
-```
-
-You might get:
-
-```text
-uid=1000(jayanta) gid=1000(jayanta) groups=1000(jayanta),27(sudo)
-```
-
-The important concepts are:
-
-```text
-uid → User ID
-gid → Group ID
-groups → Groups you're a member of
-```
-
-## groups
-
-```bash
-groups
+ps
 ```
 
 You might see:
 
 ```text
-jayanta sudo
+    PID TTY          TIME CMD
+   4210 pts/0    00:00:00 bash
+   4382 pts/0    00:00:00 ps
 ```
 
-This means your user belongs to those groups. Groups are important because Linux can give permissions to an entire group.
-
-## File ownership
-
-Look at:
+The important columns:
 
 ```text
--rw-r--r-- 1 jayanta jayanta 0 Oct 4 script.sh
-                  ↑       ↑
-                owner   group
+PID → Process ID
+TTY → Terminal
+TIME → CPU time
+CMD → Command
 ```
 
-There are two important fields:
+## ps aux
 
-```text
-owner
-group
-```
+The simple ps only shows processes associated with your current terminal.
 
-In this example:
-
-```text
-owner = jayanta
-group = jayanta
-```
-
-## chmod — Change permissions
+A much more useful command is:
 
 ```bash
-ls -l script.sh
+ps aux
 ```
 
-You might have:
+This shows processes from the system.
 
-```text
--rw-r--r-- ... script.sh
-```
+## Find a process
 
-Notice that the file isn't executable.
-
-Try:
+Let's say you want to know whether Bash is running.
 
 ```bash
-./script.sh
+ps aux | grep bash
 ```
 
-You may get:
-
-```text
-Permission denied
-```
-
-That's because it doesn't have execute permission.
-
-### Add execute permission
+## top — Live process monitoring
 
 ```bash
-chmod +x script.sh
+top
+```
+
+It continuously updates.
+
+### Exit top
+
+Press: q
+
+### What should you look for in top?
+
+When troubleshooting a server, pay attention to:
+
+```text
+%CPU
+%MEM
+```
+
+For example:
+
+```text
+PID    %CPU    %MEM    COMMAND
+1234   95.0    2.0     node
+```
+
+This means the Node.js process is consuming a lot of CPU.
+
+Another example:
+
+```text
+PID    %CPU    %MEM    COMMAND
+5678   2.0     70.0    java
+```
+
+The Java process is consuming a lot of memory.
+
+This is the beginning of real server troubleshooting.
+
+## Start a process yourself
+
+Let's create a simple long-running process.
+
+```bash
+sleep 1000
+```
+
+Your terminal will appear to "hang." That's because sleep is running for 1000 seconds.
+Don't worry—it's not broken.
+
+### What is Ctrl + C?
+
+When you press:
+
+```text
+Ctrl + C
+```
+
+you're normally sending an interrupt signal to the foreground process.
+
+## Background processes
+
+```bash
+sleep 1000 &
+```
+
+Notice the & at the end.
+means: Run this command in the background.
+
+You'll get something like:
+
+```text
+[1] 5234
+```
+
+Here:
+
+```text
+[1]  → job number
+5234 → PID
+```
+
+Your terminal is immediately available again.
+
+## jobs
+
+```bash
+jobs
+```
+
+You might see:
+
+```text
+[1]+  Running    sleep 1000 &
+```
+
+This shows background jobs associated with your current shell.
+
+### ps vs jobs
+
+```text
+jobs = Shows jobs managed by your current shell.
+ps = Shows processes.
+ps aux = Shows processes across the system.
+```
+
+### Bring a job to the foreground
+
+We have:
+
+```bash
+sleep 1000 &
+```
+
+Run:
+
+```bash
+jobs
+```
+
+You should see job number 1.
+
+Bring it back:
+
+```bash
+fg %1
+```
+
+Now the process is in the foreground.
+
+Press:
+
+```text
+Ctrl + C
+```
+
+to stop it.
+
+## Suspend a process
+
+```bash
+sleep 1000
+```
+
+While it is running, press:
+
+```text
+Ctrl + Z
+```
+
+This doesn't terminate it. It pauses/suspends the process.
+
+## Continue it in the background
+
+```bash
+bg %1
 ```
 
 Now:
 
 ```bash
-ls -l script.sh
+jobs
 ```
 
-You should see something like:
+You should see:
 
 ```text
--rwxr-xr-x ... script.sh
+[1]+  Running  sleep 1000 &
 ```
 
-Now the file is executable.
+You've moved the suspended process into the background. Eventually it will finish.
 
-### What does +x mean?
-
-This:
+## kill — Stop a process
 
 ```bash
-chmod +x script.sh
+sleep 1000 &
 ```
 
-means: Add execute permission.
-
-You can also remove it:
+Run:
 
 ```bash
-chmod -x script.sh
+jobs
+```
+
+You might get:
+
+```text
+[2]+ Running sleep 1000 &
+```
+
+Get the PID:
+
+```bash
+ps
+```
+
+or:
+
+```bash
+jobs -l
+```
+
+You might see:
+
+```text
+[2]+  6001 Running sleep 1000 &
+```
+
+Here: 6001 is the PID.
+
+Now:
+
+```bash
+kill 6001
+```
+
+Check:
+
+```bash
+jobs
+```
+
+The process should be gone or marked terminated.
+
+### Important: kill doesn't always mean "force kill"
+
+When you run:
+
+```bash
+kill 6001
+```
+
+Linux normally sends a signal to the process.
+
+The default signal is:
+
+```text
+SIGTERM
+```
+
+It basically means: Please terminate gracefully. This gives an application a chance to clean up.
+
+### kill -9
+
+You may eventually encounter:
+
+```bash
+kill -9 6001
+```
+
+-9 sends:
+
+```text
+SIGKILL
+```
+
+This is much more forceful.
+
+Think:
+
+```text
+kill PID
+    ↓
+"Please stop."
+
+kill -9 PID
+    ↓
+"Stop immediately."
+```
+
+Don't use kill -9 as your first choice.
+
+Usually:
+
+```text
+kill PID
+```
+
+should be tried first.
+
+## Find a process by name
+
+You can use:
+
+```bash
+pgrep bash
+```
+
+This returns the PID(s) of matching processes.
+
+For example: 4210
+
+You can then inspect it:
+
+```bash
+ps -p 4210
+```
+
+This is often cleaner than:
+
+```bash
+ps aux | grep bash
+```
+
+## Disk space — df
+
+```bash
+df -h
+```
+
+You'll see something like:
+
+```text
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       100G   45G   55G  45% /
+```
+
+df means: Disk filesystem usage.
+
+-h means: Human-readable.
+
+So instead of: 104857600
+
+you get: 100G
+
+Much easier to understand.
+
+### Why df -h matters
+
+Imagine your production server suddenly stops writing logs.
+
+You check:
+
+```bash
+df -h
+```
+
+and see:
+
+```text
+/dev/sda1    100G    100G    0G    100% /
+```
+
+**The disk is full**.
+
+That could explain why your application is failing. This is a very common production problem.
+
+## du — Directory size
+
+df tells you about filesystem usage.
+
+du tells you how much space files/directories are using.
+
+```bash
+du -h
+```
+
+You can also check a specific directory:
+
+```bash
+du -h ~/bash-course
+```
+
+For a summary:
+
+```bash
+du -sh ~/bash-course
+```
+
+-s means summary.
+
+So:
+
+```bash
+du -sh ~/bash-course
+```
+
+might return:
+
+```text
+20K    /home/jayanta/bash-course
+```
+
+## free — Memory usage
+
+```bash
+free -h
+```
+
+You might see:
+
+```test
+               total   used   free
+Mem:            16Gi    6Gi    4Gi
+Swap:            2Gi    0Gi    2Gi
+```
+
+The important part is memory: **Mem**
+
+and swap: **Swap**
+
+-h makes the output easier to read.
+
+## uptime
+
+```bash
+uptime
+```
+
+You might get:
+
+```bash
+10:45:22 up 3 days, 4:20, 2 users, load average: 0.20, 0.30, 0.25
+```
+
+This tells you:
+
+```text
+Current time
+How long the machine has been running
+Number of users
+Load average
+```
+
+Don't worry too much about load average yet. We'll revisit it when we get into DevOps monitoring.
+
+## A real server troubleshooting workflow
+
+Imagine your Node.js API is slow. You might start with:
+
+```bash
+top
+```
+
+Look for high CPU/memory processes.
+
+Then:
+
+```bash
+free -h
+```
+
+Check memory.
+
+Then:
+
+```bash
+df -h
+```
+
+Check disk.
+
+Then:
+
+```bash
+ps aux
+```
+
+Inspect processes.
+
+Then perhaps:
+
+```bash
+ps aux | grep node
+```
+
+Look for your Node.js application.
+
+This is the beginning of a useful Linux troubleshooting workflow.
+
+## Cheat Sheet
+
+Processes
+
+```text
+ps
+ps aux
+pgrep <name>
+top
+```
+
+Stop processes
+
+```text
+kill PID
+kill -9 PID
+```
+
+Shell jobs
+
+```bash
+jobs
+bg
+fg
+```
+
+Disk
+
+```text
+df -h
+du -sh directory
+```
+
+Memory
+
+```bash
+free -h
+```
+
+System
+
+```text
+uptime
+```
+
+Day 5 Goal
+
+You should now understand this basic picture:
+
+```text
+                  Linux System
+                       │
+       ┌───────────────┼───────────────┐
+       ↓               ↓               ↓
+    Processes         RAM            Disk
+       │               │               │
+    ps/top          free -h          df -h
+       │
+    PID
+       │
+    kill
+```
+
+## Homework
+
+Challenge 1 — Start a background process
+
+Run:
+
+```bash
+sleep 500 &
 ```
 
 Then:
 
 ```bash
-ls -l script.sh
+jobs
 ```
 
-Execute permission disappears.
-
-## Owner/group/others with chmod
-
-You can specify who receives the permission.
-
-### Owner command
+Find its PID with:
 
 ```bash
-chmod u+x script.sh
+jobs -l
 ```
 
-u = user/owner.
+Challenge 2 — Find it with ps
 
-### Group command
+Use its PID:
 
 ```bash
-chmod g+x script.sh
+ps -p PID
 ```
 
-g = group.
+Replace PID with the actual number.
 
-### Others command
-
-```bash
-chmod o+x script.sh
-```
-
-o = others.
-
-### Everyone
-
-```bash
-chmod a+x script.sh
-```
-
-a = all.
-
-So:
-
-```text
-u → user
-g → group
-o → others
-a → all
-```
-
-## Remove permissions
-
-```bash
-chmod o-w data.txt
-```
-
-means: Remove write permission from others.
-
-Or:
-
-```bash
-chmod g-w data.txt
-```
-
-means: Remove write permission from the group.
-
-## Numeric permissions
-
-This is extremely common in Linux.
-
-Instead of:
-
-```bash
-chmod u+rwx,g+rx,o+r script.sh
-```
-
-you'll often see:
-
-```bash
-chmod 754 script.sh
-```
-
-But where do these numbers come from?
-
-Here's the magic:
-
-```text
-Read     = 4
-Write    = 2
-Execute  = 1
-```
-
-Add them together.
-
-Read only: 4
-Write only: 2
-Execute only: 1
-Read + Write: 4 + 2 = 6
-Read + Execute: 4 + 1 = 5
-Read + Write + Execute: 4 + 2 + 1 = 7
-
-### Understanding 755
-
-Consider:
-
-```bash
-chmod 755 script.sh
-```
-
-Break it into: 7 5 5
-
-**First number = owner:**
-
-```text
-7 = 4 + 2 + 1
-  = r + w + x
-```
-
-**Second = group:**
-
-```text
-5 = 4 + 1
-  = r + x
-```
-
-**Third = others:**
-
-```text
-5 = 4 + 1
-  = r + x
-```
-
-Therefore:
-
-| 7   | 5   | 5   |
-| --- | --- | --- |
-| rwx | r-x | r-x |
-
-Which produces: -rwxr-xr-x
-
-### Why 777 is dangerous
-
-You may see people suggesting:
-
-```bash
-chmod 777 file
-```
-
-when something doesn't work. Don't blindly do this.
-
-777 means:
-
-```text
-Owner  → rwx
-Group  → rwx
-Others → rwx
-```
-
-You're essentially saying:
-
-**Everybody can read, modify, and execute this.**
-
-That's usually far more permission than necessary.
-
-In DevOps, we generally follow the principle:
-
-**Give only the permissions that are actually required.**
-
-## Directory permissions are slightly different
-
-This is important.
-
-For a file:
-
-```text
-r → read file
-w → modify file
-x → execute file
-```
-
-For a directory:
-
-```text
-r → list contents
-w → create/delete entries
-x → enter/traverse directory
-```
-
-For example:
-
-```bash
-chmod 700 app
-```
-
-means only the owner can properly access/traverse that directory. You'll encounter this frequently when securing application directories.
-
-## chown — Change ownership
-
-chown means: Change owner.
-
-The syntax is:
-
-```bash
-chown USER file
-```
-
-For example:
-
-```bash
-sudo chown root data.txt
-```
-
-Now root owns the file.
-
-You can also change both owner and group:
-
-```bash
-sudo chown root:root data.txt
-```
-
-Format:
-
-```bash
-chown USER:GROUP FILE
-```
-
-Using administrator privileges, make root the owner of data.txt and make root its group.
-
-Changes only the owner.
-
-```bash
-sudo chown :root data.txt
-```
-
-## Cheat Sheet
-
-Identity
-
-```bash
-whoami
-id
-groups
-```
-
-Inspect permissions
-
-```bash
-ls -l
-```
-
-Change permissions
-
-```bash
-chmod +x script.sh
-chmod -x script.sh
-chmod 755 script.sh
-chmod 644 data.txt
-chmod 600 secret.txt
-```
-
-Ownership
-
-```bash
-chown user file
-chown user:group file
-```
-
-## Homework
-
-Let's make this more practical.
-
-Go to:
-
-```bash
-cd ~/bash-course/day4
-```
-
-Challenge 1
-
-Create:
-
-```text
-script.sh
-secret.txt
-public.txt
-```
-
-Check their permissions:
-
-```bash
-ls -l
-```
-
-Challenge 2
-
-Make script.sh executable:
-
-```bash
-chmod 755 script.sh
-```
-
-Verify:
-
-```bash
-ls -l script.sh
-```
-
-You should see:
-
-```text
--rwxr-xr-x
-```
-
-Challenge 3
-
-Make secret.txt private:
-
-chmod 600 secret.txt
-
-Verify:
-
-```bash
-ls -l secret.txt
-```
-
-You should see:
-
-```text
--rw-------
-```
-
-Challenge 4
-
-Set public.txt to: 644
+Challenge 3 — Terminate it
 
 Run:
 
 ```bash
-chmod 644 public.txt
+kill PID
 ```
 
-Then verify.
-
-Challenge 5 — Think before running
-
-What permissions does this create?
+Then verify:
 
 ```bash
-chmod 750 script.sh
+jobs
 ```
 
-Don't look it up. Calculate it:
+Challenge 4 — System inspection
 
-```text
-7 = ?
-5 = ?
-0 = ?
+Run these:
+
+```bash
+free -h
+df -h
+uptime
 ```
 
-Then tell me what the resulting permission string should be.
+Try to understand what each section means.
+
+Challenge 5 — Process investigation
+
+Run:
+
+```bash
+sleep 500 &
+```
+
+Then find the process using:
+
+```bash
+pgrep sleep
+```
+
+Now terminate it using the PID returned by pgrep.
 
 Thank you
